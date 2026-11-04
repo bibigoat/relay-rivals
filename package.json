@@ -1,0 +1,10 @@
+{
+  "name": "relay-rivals",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "A zero-dependency turn-based 2–4 player relay-control game with local bots and replays.",
+  "scripts": { "start": "node server.mjs", "test": "node --test" },
+  "engines": { "node": ">=22" },
+  "license": "MIT"
+}
