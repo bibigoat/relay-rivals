@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#102724">
+  <title>Relay Rivals · A tiny game of orbital ambition</title>
+  <meta name="description" content="A quick, turn-based strategy game for humans and HTTP agents. Control five orbital relays. Make every move count.">
+  <link rel="stylesheet" href="/style.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <div class="ambient ambient-one"></div><div class="ambient ambient-two"></div>
+  <header class="site-header wrap">
+    <a class="wordmark" href="/" aria-label="Relay Rivals home"><span class="brand-icon" aria-hidden="true">↗</span><span>RELAY<span class="wordmark-second">RIVALS</span></span></a>
+    <nav aria-label="Main navigation"><button class="text-button" id="rules-open">How to play</button><button class="text-button" id="api-open"><span class="mono">{ }</span> Agent API</button><span class="live-label"><i></i> LOCAL / LIVE</span></nav>
+  </header>
+  <main class="wrap">
+    <section id="welcome" class="welcome">
+      <div class="welcome-copy">
+        <div class="eyebrow"><span class="tiny-orbit">✳</span> HUMAN INSTINCT. MACHINE STRATEGY.</div>
+        <h1>Small orbit.<br><em>Big ambitions.</em></h1>
+        <p class="intro">Five relays. Eight rounds. One very contested corner of space. Outthink your friends, challenge the bots, or bring an agent of your own.</p>
+        <div class="welcome-facts"><span><b>2—4</b> competitors</span><span><b>8</b> rounds</span><span><b>15s</b> per move</span></div>
+        <div class="orbit-illustration" aria-hidden="true"><div class="orbit-ring ring-a"></div><div class="orbit-ring ring-b"></div><span class="orbit-center">R<span>CONTROL THE RELAY</span></span><span class="orbit-dot dot-a">01</span><span class="orbit-dot dot-b">02</span><span class="orbit-dot dot-c">03</span><span class="orbit-dot dot-d">04</span><span class="orbit-dot dot-e">05</span><span class="orbit-coordinate">SECTOR 05 / OPEN CHANNEL</span></div>
+      </div>
+      <div class="entry-panel">
+        <div class="panel-eyebrow"><span class="status-dot"></span> FLIGHT CONTROL</div>
+        <div class="entry-tabs" role="tablist" aria-label="Enter a game"><button id="create-tab" class="entry-tab active" role="tab" aria-selected="true" aria-controls="create-form">New match</button><button id="join-tab" class="entry-tab" role="tab" aria-selected="false" aria-controls="join-form">Join a crew</button></div>
+        <form id="create-form">
+          <h2>Your orbit awaits.</h2><p class="muted form-intro">Invite friends or fill the empty seats with bots.</p>
+          <label for="create-name">CALL SIGN</label><input id="create-name" name="name" maxlength="24" placeholder="e.g. Captain Nova" autocomplete="nickname" required value="Captain Nova">
+          <fieldset class="seat-field"><legend>CREW SIZE</legend><div class="seat-options"><label><input type="radio" name="seats" value="2" checked><span>2<small>DUEL</small></span></label><label><input type="radio" name="seats" value="3"><span>3<small>TRIANGLE</small></span></label><label><input type="radio" name="seats" value="4"><span>4<small>FULL ORBIT</small></span></label></div></fieldset>
+          <button class="button primary full" type="submit">Create a match <span>↗</span></button><p class="entry-foot">No account. No downloads. Just a good move.</p>
+        </form>
+        <form id="join-form" hidden>
+          <h2>Meet your rivals.</h2><p class="muted form-intro">Have a room code? Your seat is one click away.</p>
+          <label for="join-name">CALL SIGN</label><input id="join-name" name="name" maxlength="24" placeholder="e.g. Orbit Runner" autocomplete="nickname" required>
+          <label for="join-code">ROOM CODE</label><input id="join-code" class="code-input" name="code" maxlength="8" placeholder="A1B2C3D4" autocomplete="off" spellcheck="false" required>
+          <button class="button primary full" type="submit">Join the match <span>↗</span></button><p class="entry-foot">Same code. Shared orbit. Different ambitions.</p>
+        </form>
+        <p id="entry-error" class="error-message" role="alert" hidden></p>
+        <button id="resume-button" class="text-button resume" hidden>Continue your last match →</button>
+      </div>
+    </section>
+
+    <section id="game" class="game" hidden>
+      <div class="game-heading"><div><div class="eyebrow">ORBITAL CONTROL / LIVE MATCH</div><h1 id="game-title" class="game-title">Make your next move.</h1></div><div class="room-share"><span class="label">ROOM</span><button id="copy-code" title="Copy room code" class="code-pill"><span id="room-code">—</span><span aria-hidden="true">⧉</span></button><button class="text-button" id="copy-link">Copy invite ↗</button></div></div>
+      <div class="game-layout">
+        <aside class="crew-panel">
+          <div class="section-label"><h2>THE CREW</h2><span id="crew-count" class="mono">0 / 4</span></div>
+          <div id="players" class="players"></div>
+          <div class="crew-note"><span class="tiny-orbit">✳</span><p>Lead a relay when the round ends to earn its points. Ties earn nothing.</p></div>
+          <button class="text-button new-match" id="new-match">← Start a new match</button>
+        </aside>
+        <div class="arena-column">
+          <div class="round-strip"><div><span class="label">ROUND</span><span class="round-number"><b id="round-current">00</b><span>/ <span id="round-total">08</span></span></span></div><div class="round-status"><span id="turn-label">Waiting for launch</span><small id="turn-subtitle">Invite your crew or play with bots.</small></div><div class="turn-clock" id="turn-clock"><span id="clock-seconds">—</span><small>SECONDS</small></div></div>
+          <div id="lobby-banner" class="lobby-banner"><div><h2>All systems ready.</h2><p id="lobby-message">Share the code, or launch now with bots.</p></div><button id="start-button" class="button primary">Launch match <span>↗</span></button></div>
+          <div id="spectator-join" class="spectator-join" hidden><p>You’re watching this orbit. Join before it launches.</p><form id="room-join-form"><input id="room-join-name" maxlength="24" placeholder="Your call sign" aria-label="Your call sign" required><button class="button secondary">Take a seat</button></form></div>
+          <div id="result-banner" class="result-banner" hidden><div class="eyebrow">MISSION COMPLETE</div><h2 id="result-title"></h2><p id="result-detail"></p><button id="play-again" class="button primary">Another orbit <span>↗</span></button></div>
+          <div class="arena-label"><span>SELECT A RELAY</span><span><i class="spotlight-dot"></i> SPOTLIGHT = +2 POINTS</span></div>
+          <div id="sectors" class="sectors" aria-label="Orbital relays"></div>
+          <section id="action-panel" class="action-panel" aria-label="Your move"><div class="action-heading"><div><span class="label">FLIGHT PLAN</span><h2 id="action-title">Choose your relay. Make it count.</h2></div><span id="energy-balance" class="energy-balance">⚡ —</span></div><div id="target-control" class="target-control" hidden><label for="target-player">DISRUPT TARGET</label><select id="target-player"></select></div><div id="actions" class="actions"></div><p id="action-hint" class="action-hint" aria-live="polite"></p><p id="game-error" class="error-message" role="alert" hidden></p></section>
+          <section class="log-panel"><div class="section-label"><h2>FLIGHT RECORDER</h2><button id="replay-open" class="text-button">Replay & export ↗</button></div><ol id="match-log" class="match-log"><li class="muted">Your story starts at launch.</li></ol></section>
+        </div>
+      </div>
+    </section>
+    <footer class="site-footer"><span>RELAY RIVALS <span class="footer-dim">/ v1.0</span></span><span>Built for humans. Open to agents.</span><span class="footer-dim">ZERO LUCK. EVERY MOVE MATTERS.</span></footer>
+  </main>
+  <div id="toast" class="toast" role="status" hidden></div>
+
+  <dialog id="rules-dialog" class="modal"><div class="modal-top"><div class="eyebrow">THE FLIGHT MANUAL</div><button class="close-modal" aria-label="Close rules">×</button></div><h2>Win the orbit.<br><em>One round at a time.</em></h2><p>Take turns placing influence on five relays. At the end of each round, each relay’s unique leader earns its points. The highlighted relay pays <strong>2 extra points</strong>. A tied lead earns nothing.</p><div class="rule-grid"><div><b>01</b><h3>Make one move</h3><p>Deploy, surge, disrupt, charge, or bank. You have 15 seconds; a timeout triggers an automatic move.</p></div><div><b>02</b><h3>Watch your energy</h3><p>Start with 4. Gain 2 each new round, up to 8. Charge adds 3, also capped at 8.</p></div><div><b>03</b><h3>Think ahead</h3><p>Influence decays by 1 after scoring. The starting player and spotlight rotate every round.</p></div><div><b>04</b><h3>Finish on top</h3><p>After 8 rounds, most points wins. Equal scores share the win.</p></div></div><div class="rule-actions"><p><strong>Deploy · 2⚡</strong> Add 1 influence.</p><p><strong>Surge · 4⚡</strong> Add 3 influence.</p><p><strong>Disrupt · 3⚡</strong> Remove up to 2 enemy influence.</p><p><strong>Charge · free</strong> Recover 3 energy.</p><p><strong>Bank · 3⚡</strong> Gain 2 points immediately.</p></div><button class="button primary close-modal">Ready for takeoff ↗</button></dialog>
+
+  <dialog id="api-dialog" class="modal api-modal"><div class="modal-top"><div class="eyebrow">THE AGENT CHANNEL</div><button class="close-modal" aria-label="Close API guide">×</button></div><h2>Bring your own<br><em>co-pilot.</em></h2><p>Agents and browsers use the same HTTP JSON API. No private advantage. Create or join a room to receive your player token; keep it secret.</p><a class="api-full-link" href="/api.html" target="_blank" rel="noopener">Open the complete API reference ↗</a><div class="api-endpoints"><p><code>POST /api/rooms</code><span>Create · <code>{"name":"Bot","seats":2}</code></span></p><p><code>POST /api/rooms/:code/join</code><span>Join · <code>{"name":"Bot"}</code></span></p><p><code>POST /api/rooms/:code/start</code><span>Host only · fills empty seats with bots</span></p><p><code>GET /api/rooms/:code</code><span>Public state · poll once per second</span></p><p><code>POST /api/rooms/:code/actions</code><span>Submit one action on your turn</span></p><p><code>GET /api/rooms/:code/replay</code><span>Initial state, events, final state</span></p></div><p class="label">EXAMPLE ACTION BODY</p><pre><code>{
+  "type": "deploy",
+  "sector": 0,
+  "expectedVersion": 3
+}</code></pre><p class="muted">Send <code>Authorization: Bearer YOUR_TOKEN</code> for start and actions. Use the current state’s version. For disrupt, include <code>targetPlayer</code>. Tokens never appear in shared links or replays.</p><button class="button secondary close-modal">Back to the orbit</button></dialog>
+
+  <dialog id="replay-dialog" class="modal replay-modal"><div class="modal-top"><div class="eyebrow">FLIGHT RECORDER / REPLAY</div><button class="close-modal" aria-label="Close replay">×</button></div><h2>Every move.<br><em>Nothing hidden.</em></h2><p id="replay-summary">Loading the flight recorder…</p><label for="replay-step" class="label">TIMELINE <span id="replay-position">0 / 0</span></label><input id="replay-step" type="range" min="0" max="0" value="0"><div id="replay-event" class="replay-event"></div><div id="replay-players" class="replay-players"></div><div id="replay-sectors" class="replay-sectors"></div><button id="replay-download" class="button primary">Download replay JSON <span>↓</span></button><p class="muted replay-note">Public game states only. No player tokens.</p></dialog>
+</body>
+</html>
