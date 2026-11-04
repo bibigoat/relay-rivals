@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Relay Rivals · Agent API</title><link rel="stylesheet" href="/api.css"></head>
+<body><main><a href="/">← Back to the arena</a><p class="tag">RELAY RIVALS / DEVELOPER DESK</p><h1>One table.<br>Any kind of player.</h1><p>Read the board. Choose a move. Send JSON. Agents and humans play by the same rules, with the same energy costs and 15-second turns.</p>
+<p class="callout">No paid model, external service or account is needed. Your bearer token controls one seat: keep it private and never put it in a URL.</p>
+<h2>1. Join a lobby</h2><p>Ask the host for the eight-character room code. Join before the host starts; empty seats will become built-in bots.</p>
+<pre><code>POST /api/rooms/AB12CD34/join
+Content-Type: application/json
+
+{"name":"My agent"}
+
+→ {"code":"AB12CD34","playerId":"…","token":"…","state":{…}}</code></pre>
+<h2>2. Read the board</h2><pre><code>GET /api/rooms/AB12CD34</code></pre><p>Wait until <code>status</code> is <code>playing</code> and <code>turnPlayerId</code> equals your player ID. Each sector's <code>influence</code> array uses the order of <code>players</code>. <code>deadline</code> is a Unix timestamp in milliseconds; <code>spotlight</code> is the sector index that earns two extra points this round.</p>
+<h2>3. Submit a move</h2><pre><code>POST /api/rooms/AB12CD34/actions
+Authorization: Bearer YOUR_TOKEN
+Content-Type: application/json
+
+{"type":"surge","sector":0,"expectedVersion":4}</code></pre><p>Use the latest <code>version</code> from state as <code>expectedVersion</code>. If the board changed, refresh and choose again. Invalid moves spend nothing.</p>
+<div class="table"><table><thead><tr><th>Action</th><th>Energy</th><th>Fields</th><th>Effect</th></tr></thead><tbody>
+<tr><td>deploy</td><td>2</td><td>sector 0–4</td><td>Place 1 influence</td></tr><tr><td>surge</td><td>4</td><td>sector 0–4</td><td>Place 3 influence</td></tr><tr><td>disrupt</td><td>3</td><td>sector, targetPlayer ID</td><td>Remove up to 2 enemy influence</td></tr><tr><td>charge</td><td>0</td><td>none</td><td>Gain 3 energy, up to 8</td></tr><tr><td>bank</td><td>3</td><td>none</td><td>Gain 2 points immediately</td></tr></tbody></table></div>
+<h2>Endpoints</h2><div class="table"><table><thead><tr><th>Method</th><th>Path</th><th>Notes</th></tr></thead><tbody><tr><td>POST</td><td>/api/rooms</td><td>Body {name, seats: 2–4}; creates host seat</td></tr><tr><td>POST</td><td>/api/rooms/CODE/join</td><td>Body {name}; returns a new seat token</td></tr><tr><td>POST</td><td>/api/rooms/CODE/start</td><td>Host bearer token; fills empty seats with bots</td></tr><tr><td>GET</td><td>/api/rooms/CODE</td><td>Public state</td></tr><tr><td>POST</td><td>/api/rooms/CODE/actions</td><td>Player bearer token and expectedVersion</td></tr><tr><td>GET</td><td>/api/rooms/CODE/replay</td><td>Initial state, events and final state</td></tr><tr><td>GET</td><td>/api/health</td><td>Service health</td></tr></tbody></table></div>
+<h2>Round scoring</h2><p>After everyone acts, each relay's sole influence leader earns its value, plus two if it is in the spotlight. A tie earns nothing. All influence decays by one, players gain two energy (maximum eight), and the first player rotates. After eight rounds, the highest total wins; equal totals share the win.</p>
+<h2>Run the sample bot</h2><pre><code>node sample-bot.mjs --url http://127.0.0.1:3000 --room AB12CD34 --name SampleBot</code></pre><p>The sample in the source repository joins through this API, polls once a second and uses a local heuristic to choose moves. It needs Node.js 22 or newer and no dependencies. Stop after <code>status: "finished"</code>.</p>
+<h2>Errors and reconnects</h2><p>Non-2xx responses contain <code>{"error":"…"}</code>. For a stale version, read the board again. After a network timeout, check whether the move already happened before retrying. Poll once per second; requests are rate limited. Room state is kept in one server process and disappears on restart or expiry. Download the replay for a lasting record.</p><small>AI-assisted original implementation. Public state includes display names and moves. Do not enter private information.</small>
+</main></body></html>
